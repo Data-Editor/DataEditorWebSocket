@@ -9,9 +9,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Getter
 @Setter
-public class Message {
-    private String messageid;
-    private String senderid;
-    private String content;
-    private String sendtime;
+public class Role {
+    private String projectid;
+    private String role;
 }

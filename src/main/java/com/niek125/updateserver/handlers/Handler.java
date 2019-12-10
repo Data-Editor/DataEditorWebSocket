@@ -1,5 +1,6 @@
 package com.niek125.updateserver.handlers;
 
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.niek125.updateserver.models.Message;
@@ -32,11 +33,11 @@ public class Handler {
         return false;
     }
 
-    public String makeMessage(TextMessage message) throws JsonProcessingException {
+    public String makeMessage(TextMessage message, DecodedJWT jwt) throws JsonProcessingException {
         String[] headPay = message.getPayload().split("\n");
         Message msg = mapper.readValue(headPay[1], Message.class);
         msg.setSendtime(LocalDateTime.now().format(formatter));
-        msg.setSenderid("m9lvWuHxJTgAOf4ugEcmea6sC0v1");
+        msg.setSenderid(jwt.getClaim("uid").asString());
         return mapper.writeValueAsString(msg);
     }
 }

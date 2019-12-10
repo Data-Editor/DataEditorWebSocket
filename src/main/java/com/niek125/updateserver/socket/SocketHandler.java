@@ -28,14 +28,14 @@ public class SocketHandler extends TextWebSocketHandler {
     }
 
     @Override
-    public void handleTextMessage(WebSocketSession session, TextMessage message) throws InterruptedException, IOException {
+    public void handleTextMessage(WebSocketSession session, TextMessage message) throws IOException {
         SessionWrapper sessionWrapper = sessions.stream().filter(x -> x.getSession() == session).collect(Collectors.toList()).get(0);
         if (sessionWrapper.getInterst() == "") {
             sessionWrapper.setInterst(message.getPayload());
         } else if (handler.isValid(message)) {
             String interest = sessionWrapper.getInterst();
             String content = handler.makeMessage(message);
-            producer.sendMessage(message.getPayload());
+            producer.sendMessage(message.getPayload().split("\n")[0] + "\n" + content);
             for (SessionWrapper webSocketSession : sessions) {
                 if (webSocketSession.getInterst().equals(interest)) {
                     webSocketSession.getSession().sendMessage(new TextMessage(content));
@@ -45,12 +45,12 @@ public class SocketHandler extends TextWebSocketHandler {
     }
 
     @Override
-    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+    public void afterConnectionEstablished(WebSocketSession session) {
         sessions.add(new SessionWrapper(session));
     }
 
     @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         sessions.removeIf(x -> x.getSession() == session);
     }
 }

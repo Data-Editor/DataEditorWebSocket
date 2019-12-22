@@ -20,6 +20,6 @@ public class SessionWrapper {
     }
 
     public boolean isComplete(){
-        return !(token == null || interest.equals("") || session == null);
+        return !(token == null || interest == null || session == null);
     }
 }

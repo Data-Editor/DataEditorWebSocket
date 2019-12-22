@@ -13,7 +13,7 @@ public class DispatcherConfig {
     @Bean
     @Autowired
     public KafkaDispatcher kafkaDispatcher(KafkaTemplate<String, String> template) {
-        return new KafkaDispatcher(template);
+        return new KafkaDispatcher(template, new ObjectMapper());
     }
 
     @Bean

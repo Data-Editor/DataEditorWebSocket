@@ -8,6 +8,7 @@ import com.niek125.updateserver.dispatcher.KafkaDispatcher;
 import com.niek125.updateserver.dispatcher.SocketDispatcher;
 import com.niek125.updateserver.handlers.Handler;
 import com.niek125.updateserver.handlers.MessageHandler;
+import com.niek125.updateserver.handlers.TokenHandler;
 import com.niek125.updateserver.socket.SessionList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -47,9 +48,10 @@ public class Config {
 
     @Bean
     @Autowired
-    public List<Handler> handlers(MessageHandler messageHandler) {
+    public List<Handler> handlers(MessageHandler messageHandler, TokenHandler tokenHandler) {
         final List<Handler> handlers = new ArrayList<>();
         handlers.add(messageHandler);
+        handlers.add(tokenHandler);
         return handlers;
     }
 }

@@ -1,12 +1,8 @@
 package com.niek125.updateserver.socket;
 
-import com.auth0.jwt.interfaces.JWTVerifier;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jayway.jsonpath.DocumentContext;
-import com.jayway.jsonpath.JsonPath;
 import com.niek125.updateserver.dispatcher.Dispatcher;
 import com.niek125.updateserver.handlers.Handler;
-import com.niek125.updateserver.models.Role;
 import com.niek125.updateserver.models.SessionWrapper;
 import com.niek125.updateserver.models.SocketHeader;
 import com.niek125.updateserver.models.SocketMessage;
@@ -17,7 +13,6 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -43,14 +38,18 @@ public class SocketHandler extends TextWebSocketHandler {
         final String[] pay = message.getPayload().split("\n");
         final SocketMessage socketMessage = new SocketMessage(mapper.readValue(pay[0], SocketHeader.class), pay[1], sessionWrapper);
         final Handler handler = handlers.stream().filter(x -> x.getProcessType().equals(socketMessage.getHeader().getPayload())).collect(Collectors.toList()).get(0);
-        if (!sessionWrapper.isComplete() && handler.getProcessType() == "token") {
-            handler.validate(socketMessage);
+        if (!sessionWrapper.isComplete() && handler.getProcessType().equals("token")) {
+            if (!handler.validate(socketMessage)) {
+                sessionList.removeSession(session);
+            }
         } else if (handler.validate(socketMessage)) {
             handler.construct(socketMessage);
             for (Dispatcher dispatcher :
                     dispatchers) {
                 dispatcher.dispatch(socketMessage);
             }
+        } else {
+            sessionList.removeSession(session);
         }
     }
 

@@ -25,12 +25,11 @@ public class TokenHandler implements Handler{
 
     @Override
     public boolean validate(SocketMessage message) {
-        DocumentContext doc = null;
         try{
-            doc = JsonPath.parse(message.getPayload());
+            final DocumentContext doc = JsonPath.parse(message.getPayload());
             message.getSender().setToken(jwtVerifier.verify(doc.read("$.token", String.class)));
-            Role[] perms = mapper.readValue(message.getSender().getToken().getClaims().get("pms").asString(), Role[].class);
-            if (!Arrays.stream(perms).filter(x -> x.getProjectid().equals(message.getSender().getInterest())).findFirst().isPresent()) {
+            final Role[] perms = mapper.readValue(message.getSender().getToken().getClaims().get("pms").asString(), Role[].class);
+            if (!Arrays.stream(perms).filter(x -> x.getProjectid().equals(doc.read("$.interest", String.class))).findFirst().isPresent()) {
                 return false;
             }
             message.getSender().setInterest(doc.read("$.interest", String.class));

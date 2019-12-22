@@ -24,15 +24,13 @@ import java.util.stream.Collectors;
 @Component
 public class SocketHandler extends TextWebSocketHandler {
     private final SessionList sessionList;
-    private final JWTVerifier jwtVerifier;
     private final List<Dispatcher> dispatchers;
     private final List<Handler> handlers;
     private final ObjectMapper mapper;
 
     @Autowired
-    public SocketHandler(SessionList sessionList, JWTVerifier jwtVerifier, List<Dispatcher> dispatchers, List<Handler> handlers, ObjectMapper mapper) {
+    public SocketHandler(SessionList sessionList, List<Dispatcher> dispatchers, List<Handler> handlers, ObjectMapper mapper) {
         this.sessionList = sessionList;
-        this.jwtVerifier = jwtVerifier;
         this.dispatchers = dispatchers;
         this.handlers = handlers;
         this.mapper = mapper;
@@ -44,19 +42,9 @@ public class SocketHandler extends TextWebSocketHandler {
         final SessionWrapper sessionWrapper = sessionList.getSession(session);
         final String[] pay = message.getPayload().split("\n");
         final SocketMessage socketMessage = new SocketMessage(mapper.readValue(pay[0], SocketHeader.class), pay[1], sessionWrapper);
-        final Handler handler = handlers.stream().filter(x -> x.getProcessType() == socketMessage.getHeader().getPayload()).collect(Collectors.toList()).get(0);
-        if (!sessionWrapper.isComplete()) {
-            final DocumentContext doc = JsonPath.parse(socketMessage.getPayload());
-            try {
-                sessionWrapper.setToken(jwtVerifier.verify(doc.read("$.token", String.class)));
-                Role[] perms = mapper.readValue(sessionWrapper.getToken().getClaims().get("pms").asString(), Role[].class);
-                if (!Arrays.stream(perms).filter(x -> x.getProjectid().equals(sessionWrapper.getInterest())).findFirst().isPresent()) {
-                    sessionList.removeSession(session);
-                }
-                sessionWrapper.setInterest(doc.read("$.interest", String.class));
-            } catch (Exception exception) {
-                sessionList.removeSession(session);
-            }
+        final Handler handler = handlers.stream().filter(x -> x.getProcessType().equals(socketMessage.getHeader().getPayload())).collect(Collectors.toList()).get(0);
+        if (!sessionWrapper.isComplete() && handler.getProcessType() == "token") {
+            handler.validate(socketMessage);
         } else if (handler.validate(socketMessage)) {
             handler.construct(socketMessage);
             for (Dispatcher dispatcher :

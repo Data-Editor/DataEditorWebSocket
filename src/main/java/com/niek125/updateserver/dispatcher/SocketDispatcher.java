@@ -1,5 +1,6 @@
 package com.niek125.updateserver.dispatcher;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.niek125.updateserver.models.SocketMessage;
 import com.niek125.updateserver.socket.SessionList;
@@ -19,10 +20,17 @@ public class SocketDispatcher implements Dispatcher {
     public void dispatch(SocketMessage message) {
         final List<SessionWrapper> sws = sessions.getSessions();
         final String interest = message.getSender().getInterest();
+        final TextMessage textMessage;
+        try {
+            textMessage = new TextMessage(mapper.writeValueAsString(message.getPayload()));
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return;
+        }
         for (SessionWrapper webSocketSession : sws) {
             if (webSocketSession.getInterest().equals(interest)) {
                 try {
-                    webSocketSession.getSession().sendMessage(new TextMessage(mapper.writeValueAsString(message.getPayload()) + "\n" + message.getPayload()));
+                    webSocketSession.getSession().sendMessage(textMessage);
                 } catch (IOException e) {
                     sessions.removeSession(webSocketSession.getSession());
                 }

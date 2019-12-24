@@ -14,4 +14,5 @@ public class Message {
     private String senderid;
     private String content;
     private String sendtime;
+    private String projectid;
 }

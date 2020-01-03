@@ -9,7 +9,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Getter
 @Setter
-public class Role extends Permission {
-    private String roleid;
-    private String userid;
+public class Permission {
+    private String projectid;
+    private RoleType role;
 }

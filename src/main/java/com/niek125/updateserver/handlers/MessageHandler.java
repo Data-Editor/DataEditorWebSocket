@@ -22,7 +22,7 @@ public class MessageHandler implements Handler {
 
     @Override
     public boolean validate(SocketMessage message) {
-        Message msg = null;
+        final Message msg;
         try {
             msg = mapper.readValue(message.getPayload(), Message.class);
         } catch (JsonProcessingException e) {
@@ -33,8 +33,7 @@ public class MessageHandler implements Handler {
                         (msg.getContent().length() > 0) &&
                         (msg.getContent().length() < 257) &&
                         (msg.getSendtime() == null) &&
-                        (msg.getSenderid() == null) &&
-                        (msg.getProjectid() == null))) {
+                        (msg.getSenderid() == null))) {
             return false;
         }
         return true;
@@ -46,7 +45,6 @@ public class MessageHandler implements Handler {
             final Message msg = mapper.readValue(message.getPayload(), Message.class);
             msg.setSendtime(LocalDateTime.now().format(formatter));
             msg.setSenderid(message.getSender().getToken().getClaim("uid").asString());
-            msg.setProjectid(message.getSender().getInterest());
             message.setPayload(mapper.writeValueAsString(msg));
         } catch (JsonProcessingException e) {
             message.setPayload("");

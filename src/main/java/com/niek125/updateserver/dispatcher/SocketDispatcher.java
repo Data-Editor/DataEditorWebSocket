@@ -22,7 +22,7 @@ public class SocketDispatcher implements Dispatcher {
         final String interest = message.getSender().getInterest();
         final TextMessage textMessage;
         try {
-            textMessage = new TextMessage(mapper.writeValueAsString(message.getPayload()));
+            textMessage = new TextMessage(mapper.writeValueAsString(message.getHeader()) + "\n" + message.getPayload());
         } catch (JsonProcessingException e) {
             e.printStackTrace();
             return;

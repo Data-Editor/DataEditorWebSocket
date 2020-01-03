@@ -10,15 +10,24 @@ import java.time.format.DateTimeFormatter;
 
 @Configuration
 public class HandlerConfig {
+    @Bean
+    public RoleHandler roleHandler() {
+        return new RoleHandler(new ObjectMapper());
+    }
 
     @Bean
-    public MessageHandler messageHandler(){
+    public DataHandler dataHandler() {
+        return new DataHandler(new ObjectMapper());
+    }
+
+    @Bean
+    public MessageHandler messageHandler() {
         return new MessageHandler(new ObjectMapper(), DateTimeFormatter.ofPattern("dd-MM-yyyy hh-mm"));
     }
 
     @Bean
     @Autowired
-    TokenHandler tokenHandler(JWTVerifier verifier){
+    public TokenHandler tokenHandler(JWTVerifier verifier) {
         return new TokenHandler(verifier, new ObjectMapper());
     }
 }

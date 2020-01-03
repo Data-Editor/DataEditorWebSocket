@@ -21,7 +21,7 @@ public class MessageHandler implements Handler {
     }
 
     @Override
-    public boolean validate(SocketMessage message) {
+    public boolean validate(SocketMessage message) {//old does not support delete and edit
         final Message msg;
         try {
             msg = mapper.readValue(message.getPayload(), Message.class);

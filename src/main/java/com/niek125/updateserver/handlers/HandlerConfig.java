@@ -22,7 +22,7 @@ public class HandlerConfig {
 
     @Bean
     public MessageHandler messageHandler() {
-        return new MessageHandler(new ObjectMapper(), DateTimeFormatter.ofPattern("dd-MM-yyyy hh-mm"));
+        return new MessageHandler(new ObjectMapper(), DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm"));
     }
 
     @Bean

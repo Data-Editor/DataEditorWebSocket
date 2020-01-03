@@ -1,6 +1,7 @@
 package com.niek125.updateserver.handlers;
 
 import com.auth0.jwt.interfaces.JWTVerifier;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
@@ -34,7 +35,7 @@ public class TokenHandler implements Handler{
             }
             message.getSender().setInterest(doc.read("$.interest", String.class));
         }
-        catch (Exception e){
+        catch (JsonProcessingException e){
             return false;
         }
         return true;

@@ -7,8 +7,14 @@ import lombok.Setter;
 @AllArgsConstructor
 @Getter
 public class SocketMessage {
-    private final SocketHeader header;
+    private SocketHeader header;
     @Setter
     private String payload;
-    private final SessionWrapper sender;
+    @Setter
+    private String interest;
+
+    public SocketMessage(SocketHeader header, String payload) {
+        this.header = header;
+        this.payload = payload;
+    }
 }

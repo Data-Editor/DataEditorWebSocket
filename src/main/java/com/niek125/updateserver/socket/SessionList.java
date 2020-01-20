@@ -1,15 +1,17 @@
 package com.niek125.updateserver.socket;
 
 import com.niek125.updateserver.models.SessionWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Collectors;
 
 public class SessionList {
+    private final Logger logger = LoggerFactory.getLogger(SessionList.class);
     private final List<SessionWrapper> sessions;
 
     public SessionList() {
@@ -20,15 +22,8 @@ public class SessionList {
         return new ArrayList<>(sessions);
     }
 
-    public SessionWrapper getSession(WebSocketSession session) throws Exception {
-        List<SessionWrapper> sws = sessions.stream().filter(x -> x.getSession() == session).collect(Collectors.toList());
-        if (sws.size() == 0) {
-            throw new Exception(String.format("Session %s not found", session.getId()));
-        }
-        if (sws.size() > 1) {
-            throw new Exception("Multiple session %s not found");
-        }
-        return sws.get(0);
+    public SessionWrapper getSession(WebSocketSession session) {
+        return sessions.stream().filter(x -> x.getSession() == session).findAny().orElseThrow(IndexOutOfBoundsException::new);
     }
 
     public void addSession(WebSocketSession session) {
@@ -39,7 +34,7 @@ public class SessionList {
         try {
             session.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.debug("session already closed: {}", e.getMessage());
         }
         sessions.removeIf(x -> x.getSession() == session);
     }

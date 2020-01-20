@@ -1,11 +1,10 @@
 package com.niek125.updateserver.socket;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.niek125.updateserver.dispatcher.Dispatcher;
-import com.niek125.updateserver.handlers.Handler;
+import com.niek125.updateserver.handlers.HandlerExecutor;
+import com.niek125.updateserver.handlers.TokenHandler;
 import com.niek125.updateserver.models.SessionWrapper;
-import com.niek125.updateserver.models.SocketHeader;
-import com.niek125.updateserver.models.SocketMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
@@ -13,42 +12,29 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 @Component
 public class SocketHandler extends TextWebSocketHandler {
+    private final Logger logger = LoggerFactory.getLogger(SocketHandler.class);
     private final SessionList sessionList;
-    private final List<Dispatcher> dispatchers;
-    private final List<Handler> handlers;
-    private final ObjectMapper mapper;
+    private final TokenHandler tokenHandler;
+    private final HandlerExecutor handlerExecutor;
 
     @Autowired
-    public SocketHandler(SessionList sessionList, List<Dispatcher> dispatchers, List<Handler> handlers, ObjectMapper mapper) {
+    public SocketHandler(SessionList sessionList, TokenHandler tokenHandler, HandlerExecutor handlerExecutor) {
         this.sessionList = sessionList;
-        this.dispatchers = dispatchers;
-        this.handlers = handlers;
-        this.mapper = mapper;
+        this.tokenHandler = tokenHandler;
+        this.handlerExecutor = handlerExecutor;
     }
 
     @Override
-    public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
-        System.out.println(message.getPayload());
+    public void handleTextMessage(WebSocketSession session, TextMessage message) {
+        logger.info("received message: {}", message.getPayload());
         final SessionWrapper sessionWrapper = sessionList.getSession(session);
-        final String[] pay = message.getPayload().split("\n");
-        final SocketMessage socketMessage = new SocketMessage(mapper.readValue(pay[0], SocketHeader.class), pay[1], sessionWrapper);
-        final Handler handler = handlers.stream().filter(x -> x.getProcessType().equals(socketMessage.getHeader().getPayload())).collect(Collectors.toList()).get(0);
-        if (!sessionWrapper.isComplete() && handler.getProcessType().equals("token")) {
-            if (!handler.validate(socketMessage)) {
+        if (!sessionWrapper.isComplete()) {
+            if (!tokenHandler.setToken(message.getPayload(), sessionWrapper)) {
                 sessionList.removeSession(session);
             }
-        } else if (handler.validate(socketMessage)) {
-            handler.construct(socketMessage);
-            for (Dispatcher dispatcher :
-                    dispatchers) {
-                dispatcher.dispatch(socketMessage);
-            }
-        } else {
+        } else if (!handlerExecutor.handle(message.getPayload(), sessionWrapper)) {
             sessionList.removeSession(session);
         }
     }

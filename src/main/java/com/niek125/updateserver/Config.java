@@ -3,12 +3,13 @@ package com.niek125.updateserver;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.JWTVerifier;
-import com.niek125.updateserver.dispatcher.Dispatcher;
-import com.niek125.updateserver.dispatcher.KafkaDispatcher;
-import com.niek125.updateserver.dispatcher.SocketDispatcher;
+import com.niek125.updateserver.dispatchers.Dispatcher;
+import com.niek125.updateserver.dispatchers.KafkaDispatcher;
+import com.niek125.updateserver.dispatchers.SocketDispatcher;
 import com.niek125.updateserver.handlers.*;
 import com.niek125.updateserver.socket.SessionList;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
@@ -23,10 +24,16 @@ import static com.niek125.updateserver.utils.PemUtils.readPublicKeyFromFile;
 @Configuration
 public class Config {
 
+    @Value("${com.niek125.publickey}")
+    private String publickey;
+
+    @Value("${com.niek125.allowed-token-signer}")
+    private String tokenSigner;
+
     @Bean
     public JWTVerifier jwtVerifier() throws IOException {
-        final Algorithm algorithm = Algorithm.RSA512((RSAPublicKey) readPublicKeyFromFile("src/main/resources/PublicKey.pem", "RSA"), null);
-        return JWT.require(algorithm).withIssuer("data-editor-token-service").build();
+        final Algorithm algorithm = Algorithm.RSA512((RSAPublicKey) readPublicKeyFromFile(publickey, "RSA"), null);
+        return JWT.require(algorithm).withIssuer(tokenSigner).build();
     }
 
     @Bean
@@ -46,10 +53,9 @@ public class Config {
 
     @Bean
     @Autowired
-    public List<Handler> handlers(MessageHandler messageHandler, TokenHandler tokenHandler, DataHandler dataHandler, RoleHandler roleHandler) {
+    public List<Handler> handlers(MessageHandler messageHandler, DataHandler dataHandler, RoleHandler roleHandler) {
         final List<Handler> handlers = new ArrayList<>();
         handlers.add(messageHandler);
-        handlers.add(tokenHandler);
         handlers.add(dataHandler);
         handlers.add(roleHandler);
         return handlers;

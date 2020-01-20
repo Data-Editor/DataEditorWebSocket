@@ -1,4 +1,4 @@
-package com.niek125.updateserver.dispatcher;
+package com.niek125.updateserver.dispatchers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -6,25 +6,28 @@ import com.niek125.updateserver.models.SocketMessage;
 import com.niek125.updateserver.socket.SessionList;
 import com.niek125.updateserver.models.SessionWrapper;
 import lombok.AllArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.socket.TextMessage;
 
 import java.io.IOException;
 import java.util.List;
 
 @AllArgsConstructor
-public class SocketDispatcher implements Dispatcher {
+public class SocketDispatcher implements Dispatcher<SocketMessage> {
+    private final Logger logger = LoggerFactory.getLogger(SocketDispatcher.class);
     private final SessionList sessions;
     private final ObjectMapper mapper;
 
     @Override
     public void dispatch(SocketMessage message) {
         final List<SessionWrapper> sws = sessions.getSessions();
-        final String interest = message.getSender().getInterest();
+        final String interest = message.getInterest();
         final TextMessage textMessage;
         try {
             textMessage = new TextMessage(mapper.writeValueAsString(message.getHeader()) + "\n" + message.getPayload());
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            logger.error("could not parse socket message to json: {}", e.getMessage());
             return;
         }
         for (SessionWrapper webSocketSession : sws) {
@@ -32,6 +35,7 @@ public class SocketDispatcher implements Dispatcher {
                 try {
                     webSocketSession.getSession().sendMessage(textMessage);
                 } catch (IOException e) {
+                    logger.debug("session closed: {}", e.getMessage());
                     sessions.removeSession(webSocketSession.getSession());
                 }
             }
